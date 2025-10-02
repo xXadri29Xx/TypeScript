@@ -1,3 +1,13 @@
-const numeritos:number[] = [1,2,3,4,5];
+import axios from "axios";
 
-const numeritos2:number[] = [6,7,8,9,10];
+const laPromesaAxios = axios
+    .get("https://rickandmortyapi.com/api")
+    .then((res) => {
+        console.log(res);
+    })
+    .catch((err) => {
+        console.log("Error en la petición: ",err);
+    })
+    .finally(() => {
+        console.log("La promesa ha finalizado su ejecución")
+    })
