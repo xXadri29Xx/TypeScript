@@ -24,39 +24,9 @@ const getCharacter = (name?: string, status?: string, gender?: string) => {
 }
 
 
+const getEpisodeofCharacter = (id: number) => {
+    axios.get(urlbase+id).then(res2=>console.log(res2.data.episode))
+}
+
 getCharacter('Rick','alive','female')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-    const finalurl='?name='+name+'&status='+status+'&gender='+gender;
-    axios.get(urlbase+finalurl).then(res=>console.log(res.data.results))
-*/
-
-/*
-getEpisodeofCharacter(idPersonaje)
-
-*/
+getEpisodeofCharacter(1)
