@@ -1,107 +1,132 @@
-/*
+import express from "express";
+import cors from "cors";
 import axios from "axios";
 
-const urlbase= 'https://rickandmortyapi.com/api/character/'
+const app = express();
+const port = 3000;
 
-const getCharacter = (name?: string, status?: string, gender?: string) => {
-    const variables = [
-        { key: "name", value: name },
-        { key: "status", value: status },
-        { key: "gender", value: gender }
-     ];
-    const urlfinal: (string | undefined) = variables.reduce((acc,i) => {
-    if (i.value) {
-      if (!acc) {
-        acc = `?${i.key}=${i.value}`;
-      } else {
-        acc += `&${i.key}=${i.value}`;
-      }
-    }
-    return acc;
-    }, "")
+app.use(cors());
+app.use(express.json());
 
-
-    axios.get(urlbase+urlfinal).then(res=>console.log(res.data.results))
+type Team = {
+ id: number
+ name: string
+ city: string
+ titles: number
 }
 
 
-const getEpisodeofCharacter = (id: number) => {
-    axios.get(urlbase+id).then(res2=>console.log(res2.data.episode))
-}
+let teams: Team[] = [
+ { id: 1, name: "Lakers", city: "Los Angeles", titles: 17 },
+ { id: 2, name: "Celtics", city: "Boston", titles: 17 },
+];
 
-getCharacter('Rick','alive','female')
-getEpisodeofCharacter(1)
-*/
 
-import axios from "axios";
+app.get("/teams", (req, res)=> {
+  res.status(200).json(teams);
+});
 
-/*
-axios.get("https://rickandmortyapi.com/api/character/2").then((res)=>{
-  console.log(res.data);
-})
-*/
-
-const getCharacter = async (id: number) => {
-  const res = await axios.get(`https://rickandmortyapi.com/api/character/${id}`);
-  return res.data;
-}
-
-console.log(await getCharacter(1));
-
-/*
-const getCharacterClassic = (id: number) => {
-  return axios.get(`https://rickandmortyapi.com/api/character/${id}`).then((res)=>{
-    return res.data;
-  });
-}
-
-console.log(await getCharacterClassic(1));
-console.log(await getCharacterClassic(2));
-console.log(await getCharacterClassic(3));
-console.log(await getCharacterClassic(4));
-console.log(await getCharacterClassic(5));
-
-getCharacterClassic(1).then((char) =>{
-  console.log(char);
-  getCharacterClassic(2).then((char2) =>{
-    console.log(char2)
-    getCharacter(3).then((char3) =>{
-      console.log(char3)
-    })
+app.get("/teams/:id", (req, res)=> {
+  const id = Number(req.params.id);
+  const buscar = teams.find((elem)=>elem.id==id);
+  buscar ? res.status(200).json(buscar) : res.status(404).json({
+    error: "Equipo no encontrado."
   })
 })
-*/
 
-const getCharactersProper = async (ids:number[]) => {
-  try{
-    /*
-    const chars = ids.map(async (id)=>{
-      const personaje = (await axios.get(`https://rickandmortyapi.com/api/character/${id}`)).data;
-      console.log(personaje)
-    })
-    return await Promise.all(chars);  //Mejor opcion
-    */
-    /*
-    const per1 = (await axios.get(`https://rickandmortyapi.com/api/character/${ids[0]}`)).data;
-    const per2 = (await axios.get(`https://rickandmortyapi.com/api/character/${ids[1]}`)).data;
-    return [per1,per2];
-    */
-    const chars = ids.map(async (id)=>{
-      const personaje = (await axios.get(`https://rickandmortyapi.com/api/character/${id}`)).data; //axios.get<Character>(`https://rickandmortyapi.com/api/character/${id}`)).data; Hay que crear el type Character
-      return personaje;
-    })
-    const finalChars = await chars;
-    return finalChars;
+app.post("/teams", (req, res)=> {
+  const newName = req.body.name;
+  const newCity = req.body.city;
+  const newTitles = req.body.titles;
+  const newTeam = {
+    id:Date.now(),
+    name:newName,
+    city:newCity,
+    titles:newTitles
+  }
 
-  }catch(err){
-    //console.log("Error: " + err);
-    if(axios.isAxiosError(err)){
-      console.log("Error en la petición: " + err.message);
-    }
-    else{
-      console.log("Error general: " + err);
-    }
+  if(newName && newCity && typeof(newName)=="string" && typeof(newCity)=="string" && typeof(newTitles)=="number"){
+    teams.push(newTeam);
+    res.status(201).json(newTeam);
+  }
+  else{
+    res.status(400).json({
+      error: "Error en la creacion de un equipo"
+    })
+  }
+})
+
+app.put("/teams/:id", (req, res)=> {
+  const id = Number(req.params.id);
+  const index = teams.findIndex((elem) => elem.id == id);
+
+  if(index === -1){
+    return res.status(404).json({ error: "Equipo no encontrado" });
+  }
+
+  const newName = req.body.name;
+  const newCity = req.body.city;
+  const newTitles = req.body.titles;
+  const newTeam = {
+    id:id,
+    name:newName,
+    city:newCity,
+    titles:newTitles
+  }
+
+  if(newName && newCity && typeof(newName)=="string" && typeof(newCity)=="string" && typeof(newTitles)=="number"){
+    teams[index] = newTeam;
+    res.status(200).json(newTeam);
+  }
+  else{
+    res.status(400).json({
+      error: "Error al actualizar un equipo"
+    })
+  }
+})
+
+app.delete("/teams/:id", (req, res)=> {
+  const id = Number(req.params.id);
+  const existe = teams.some((elem) => elem.id == id);
+
+  if(!existe){
+    return res.status(404).json({ error: "Equipo no encontrado" });
+  }
+
+  teams = teams.filter((elem)=>elem.id !== id)
+  res.status(204).json({message: "Equipo eliminado correctamente"})
+
+})
+
+app.listen(port, () => console.log("Servidor en http://localhost:3000"));
+
+
+const testAPI = async () => {
+  try {
+    const Equipos = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
+    console.log("Equipos iniciales:", Equipos);
+
+    const nuevoEquipo = (await axios.post("http://localhost:3000/teams", { name: "Bulls", city: "Chicago", titles: 6 })).data;
+
+    const Equipos2 = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
+    console.log("Después de añadir:", Equipos2);
+
+    await axios.put(`http://localhost:3000/teams/${nuevoEquipo.id}`, { name: "Raptors", city: "Toronto", titles: 1 });
+    const Equipos3 = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
+    console.log("Después de modificar:", Equipos3);
+
+    await axios.delete(`http://localhost:3000/teams/${nuevoEquipo.id}`);
+
+    const Equipos4 = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
+    console.log("Después de eliminar:", Equipos4);
+
+  } catch (err) {
+    console.error("Error en la API:", err);
   }
 }
 
-console.log(await getCharactersProper([1,2,3]));
+
+setTimeout(() => {
+  testAPI();
+},1000);
+
