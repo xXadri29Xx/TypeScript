@@ -8,117 +8,88 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-type Team = {
- id: number
- name: string
- city: string
- titles: number
-}
+type LD = {
+id: number,
+filmName: string,
+rotationType: "CAV" | "CLV",
+region: string,
+lengthMinutes: number,
+videoFormat: "NTSC" | "PAL"
+};
 
-
-let teams: Team[] = [
- { id: 1, name: "Lakers", city: "Los Angeles", titles: 17 },
- { id: 2, name: "Celtics", city: "Boston", titles: 17 },
+let LDs: LD[] = [
+ { id: 1, filmName: "Pelicula 1", rotationType: "CAV", region: "Madrid", lengthMinutes: 120, videoFormat: "NTSC" },
+ { id: 2, filmName: "Pelicula 2", rotationType: "CAV", region: "Barcelona", lengthMinutes: 60, videoFormat: "PAL" },
+ { id: 3, filmName: "Pelicula 3", rotationType: "CLV", region: "Malaga", lengthMinutes: 180, videoFormat: "NTSC" },
+ { id: 4, filmName: "Pelicula 4", rotationType: "CLV", region: "Burgos", lengthMinutes: 40, videoFormat: "PAL" },
 ];
 
 
-app.get("/teams", (req, res)=> {
-  res.status(200).json(teams);
-});
+app.get("/id", (req, res)=> {
+  res.status(200).json(LDs);
+})
 
-app.get("/teams/:id", (req, res)=> {
+app.get("/id/:id", (req, res)=> {
   const id = Number(req.params.id);
-  const buscar = teams.find((elem)=>elem.id==id);
-  buscar ? res.status(200).json(buscar) : res.status(404).json({
-    error: "Equipo no encontrado."
+  const search = LDs.find((elem)=>elem.id==id);
+  search ? res.status(200).json(search) : res.status(404).json({
+    message: "Disco no encontrado"
   })
 })
 
-app.post("/teams", (req, res)=> {
-  const newName = req.body.name;
-  const newCity = req.body.city;
-  const newTitles = req.body.titles;
-  const newTeam = {
+app.post("/id", (req, res)=> {
+  const newLD:LD = {
     id:Date.now(),
-    name:newName,
-    city:newCity,
-    titles:newTitles
+    filmName: req.body.filmName,
+    rotationType: req.body.rotationType,
+    region: req.body.region,
+    lengthMinutes: req.body.lengthMinutes,
+    videoFormat: req.body.videoFormat
   }
 
-  if(newName && newCity && typeof(newName)=="string" && typeof(newCity)=="string" && typeof(newTitles)=="number"){
-    teams.push(newTeam);
-    res.status(201).json(newTeam);
+  if(newLD.filmName && newLD.rotationType && newLD.region && newLD.lengthMinutes && newLD.videoFormat 
+    && typeof(newLD.filmName)=="string" && (newLD.rotationType =="CAV" || newLD.rotationType =="CLV") 
+    && typeof(newLD.region)=="string" && typeof(newLD.lengthMinutes)=="number" 
+    && (newLD.videoFormat=="NTSC" || newLD.videoFormat=="PAL")){
+      LDs.push(newLD);
+      res.status(201).json(newLD);
   }
   else{
-    res.status(400).json({
-      error: "Error en la creacion de un equipo"
+    res.status(404).json({
+        message: "Disco no creado"
     })
   }
 })
 
-app.put("/teams/:id", (req, res)=> {
+app.delete("/id/:id", (req, res)=> {
   const id = Number(req.params.id);
-  const index = teams.findIndex((elem) => elem.id == id);
+  const exist = LDs.some((elem) => elem.id == id);
 
-  if(index === -1){
-    return res.status(404).json({ error: "Equipo no encontrado" });
+  if(!exist){
+    return res.status(404).json({message: "Disco no encontrado"});
   }
 
-  const newName = req.body.name;
-  const newCity = req.body.city;
-  const newTitles = req.body.titles;
-  const newTeam = {
-    id:id,
-    name:newName,
-    city:newCity,
-    titles:newTitles
-  }
-
-  if(newName && newCity && typeof(newName)=="string" && typeof(newCity)=="string" && typeof(newTitles)=="number"){
-    teams[index] = newTeam;
-    res.status(200).json(newTeam);
-  }
-  else{
-    res.status(400).json({
-      error: "Error al actualizar un equipo"
-    })
-  }
-})
-
-app.delete("/teams/:id", (req, res)=> {
-  const id = Number(req.params.id);
-  const existe = teams.some((elem) => elem.id == id);
-
-  if(!existe){
-    return res.status(404).json({ error: "Equipo no encontrado" });
-  }
-
-  teams = teams.filter((elem)=>elem.id !== id)
-  res.status(204).json({message: "Equipo eliminado correctamente"})
-
+  LDs = LDs.filter((elem)=>elem.id !== id)
+  res.status(204).json({mesage: "Disco eliminado"})
 })
 
 app.listen(port, () => console.log("Servidor en http://localhost:3000"));
 
 
-const testAPI = async () => {
+const testApi = async () => {
   try {
-    const Equipos = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
-    console.log("Equipos iniciales:", Equipos);
+    const LDs1 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
+    console.log("Discos iniciales:", LDs1);
 
-    const nuevoEquipo = (await axios.post("http://localhost:3000/teams", { name: "Bulls", city: "Chicago", titles: 6 })).data;
+    const nuevoLD:LD = (await axios.post("http://localhost:3000/id", {filmName: "Terminator", rotationType: "CAV", region: "EEUU", lengthMinutes: 80, videoFormat: "NTSC" })).data;
 
-    const Equipos2 = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
-    console.log("Después de añadir:", Equipos2);
+    const LDs2 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
+    console.log("Después de añadir:", LDs2);
 
-    await axios.put(`http://localhost:3000/teams/${nuevoEquipo.id}`, { name: "Raptors", city: "Toronto", titles: 1 });
-    const Equipos3 = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
-    console.log("Después de modificar:", Equipos3);
+    await axios.delete(`http://localhost:3000/id/${nuevoLD.id}`);
 
-    await axios.delete(`http://localhost:3000/teams/${nuevoEquipo.id}`);
-
-    const Equipos4 = (await axios.get<Team[]>("http://localhost:3000/teams")).data;
-    console.log("Después de eliminar:", Equipos4);
+    const LDs3 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
+    console.log("Después de eliminar:", LDs3);
 
   } catch (err) {
     console.error("Error en la API:", err);
@@ -127,6 +98,6 @@ const testAPI = async () => {
 
 
 setTimeout(() => {
-  testAPI();
+  testApi();
 },1000);
 
