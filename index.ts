@@ -61,6 +61,38 @@ app.post("/id", (req, res)=> {
   }
 })
 
+app.put("/id/:id", (req, res)=> {
+  const id = Number(req.params.id);
+  const index = LDs.findIndex((elem)=>elem.id==id);
+  
+  if(index === -1){
+    return res.status(404).json({error: "Disco no encontrado"})
+  }
+
+  const newLD:LD = {
+    id:id,
+    filmName: req.body.filmName,
+    rotationType: req.body.rotationType,
+    region: req.body.region,
+    lengthMinutes: req.body.lengthMinutes,
+    videoFormat: req.body.videoFormat
+  }
+  if(newLD.filmName && newLD.rotationType && newLD.region && newLD.lengthMinutes && newLD.videoFormat 
+    && typeof(newLD.filmName)=="string" && (newLD.rotationType =="CAV" || newLD.rotationType =="CLV") 
+    && typeof(newLD.region)=="string" && typeof(newLD.lengthMinutes)=="number" 
+    && (newLD.videoFormat=="NTSC" || newLD.videoFormat=="PAL")){
+      LDs[index] = newLD;
+      res.status(200).json(newLD)
+  }
+  else{
+    res.status(400).json({
+      message: "Error al actualizar el disco"
+    })
+  }
+
+
+})
+
 app.delete("/id/:id", (req, res)=> {
   const id = Number(req.params.id);
   const exist = LDs.some((elem) => elem.id == id);
@@ -86,10 +118,14 @@ const testApi = async () => {
     const LDs2 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
     console.log("Después de añadir:", LDs2);
 
+    await axios.put<LD[]>(`http://localhost:3000/id/${nuevoLD.id}`, { id: 4, filmName: "Terminator2", rotationType: "CLV", region: "Burgos", lengthMinutes: 40, videoFormat: "PAL" })
+    const LDs3 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
+    console.log("Después de actualizar:", LDs3);
+
     await axios.delete(`http://localhost:3000/id/${nuevoLD.id}`);
 
-    const LDs3 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
-    console.log("Después de eliminar:", LDs3);
+    const LDs4 = (await axios.get<LD[]>("http://localhost:3000/id")).data;
+    console.log("Después de eliminar:", LDs4);
 
   } catch (err) {
     console.error("Error en la API:", err);
